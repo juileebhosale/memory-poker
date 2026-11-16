@@ -5,3 +5,5 @@ tools/
 CLAUDE.md
 README.md
 package.json
+docs/
+supabase/

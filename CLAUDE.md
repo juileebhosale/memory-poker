@@ -46,9 +46,10 @@ Try every pair of grid cards with the 3 open cards. That is 28 pairs for 8 cards
 ## Tech rules
 
 - **Static site.** HTML, CSS, plain JavaScript using ES modules. No framework. No build step. No npm dependencies for the game itself.
+  - One exception: live rooms use `@supabase/supabase-js`. A copy of its single-file build is kept in `memory-poker/vendor/` (MIT licence alongside) and loaded only when someone opens a live room, so solo play never depends on it. To update: `npm pack @supabase/supabase-js@<version>`, copy `dist/umd/supabase.js`, and change the path in `js/supabaseBackend.js`.
 - **Seeded randomness.** All randomness goes through a seeded random number generator (RNG). The same seed must always give the same deal. Never call `Math.random()` in game logic.
   - The only allowed use of non-seeded randomness is generating a new seed string when none is given.
-- **URL parameters.** `?seed=<string>&n=<8|16>`
+- **URL parameters.** `?seed=<string>&n=<8|16>&from=<name>` for solo deals; `?room=<CODE>` for live rooms (add `&backend=local` to force local test mode).
   - Missing seed: generate one and write it into the URL with `history.replaceState` (no page reload).
   - Missing or invalid `n`: show the setup screen so the player can choose.
 - **Pure game logic.** `rng.js`, `deck.js` and `handEvaluator.js` are pure functions. No DOM access, no `window`, no `document`, no timers. They must run in Node.
@@ -68,8 +69,17 @@ memory-poker/                 everything the browser loads (served at /memory-po
   js/rng.js                   seeded RNG + shuffle
   js/deck.js                  card model, deck, deal
   js/handEvaluator.js         evaluate a 5-card hand, compare hands, find best pair
-  js/game.js                  game state machine + timer
+  js/round.js                 one round on screen (memorize -> flip -> place -> lock in), any clock
+  js/game.js                  entry point: home screen + solo mode
   js/ui.js                    all DOM rendering
+  js/liveRules.js             pure live-room rules: timeline, room codes, clock offset, ranking, points
+  js/live.js                  live rooms controller: create/join, lobby, synced rounds, leaderboard
+  js/supabaseBackend.js       live backend: Supabase (Postgres + Realtime + anonymous sign-in)
+  js/localBackend.js          live backend: local test mode (one browser, several tabs)
+  js/config.js                Supabase URL + publishable key (empty = local test mode)
+  vendor/                     supabase-js single-file build + its licence
+supabase/schema.sql           tables, permissions, RLS, functions, realtime, cleanup job
+docs/SUPABASE_SETUP.md        dashboard setup steps + live test plan
 tests/                        node --test (imports from ../memory-poker/js/)
 tools/make_images.py          generates og-image.png and PNG icons (needs Pillow)
 tools/dev-server.mjs          local server that behaves like production
@@ -115,15 +125,44 @@ package.json                  "type": "module" + npm scripts; no dependencies
 - `compare(a, b) -> -1 | 0 | 1` — compares two `evaluate` results. Category first, then `tiebreak` left to right.
 - `bestPair(grid, open) -> { indices: [i, j], hand }` — tries every pair, returns the strongest. If several pairs tie, return the first one found (lowest indices).
 
+### js/round.js
+- One round on screen: optional "starting in" countdown -> memorize (60s) -> flip -> place -> locked in / timed out.
+- Takes a `now()` clock: `Date.now` for solo, server time (`Date.now() + offset`) for live.
+- Everything is worked out from `now()` every 200 ms, never by counting ticks, so a lagging or sleeping tab catches up. A player who joins or refreshes mid-round lands in the right phase.
+- `placeMs`: lock-in time limit after the flip (live: 30s). `null` = no limit (solo).
+- Lock-in time = `now() - flipAt`.
+
 ### js/game.js
-- Holds game state. Calls `ui.js` to render. Does not touch the DOM directly.
-- States: `SETUP -> MEMORIZE -> PLACE -> REVEAL`.
-- Timer uses `Date.now()` differences, not counting ticks, so it stays accurate if the browser tab lags.
+- Entry point. Home screen (Play solo / Play with friends / join by code) and solo mode.
+- Loads `live.js` only when a live room is opened.
+
+### js/live.js
+- Live room flow: create (host picks 8/16 + name) or join (name), lobby with who's online, host Start (min 2 online), synced rounds, results table, host Next round, Leave.
+- On any change (realtime event, tab becoming visible, every 15s) it re-reads the room and its players and redraws. The database is the single source of truth.
+- Any player calls `finish_round` when everyone has locked in, or just after the deadline. The server decides.
+
+### js/liveRules.js
+- Pure. Timeline (`START_DELAY_MS` 5s, `MEMORIZE_MS` 60s, `PLACE_MS` 30s), room codes (5 letters, no I/O), clock offset (fastest of 3 samples), `rankRound` and `ROUND_POINTS` 3/2/1.
+- `rankRound` must match the ordering in `finish_round` in `supabase/schema.sql`: hand category desc, tiebreak desc, lock-in time asc, name, id.
+
+### Backends (`supabaseBackend.js`, `localBackend.js`)
+- Same interface: `userId`, `serverNowSample`, `createRoom`, `getRoom`, `listPlayers`, `joinRoom`, `leaveRoom`, `startRound`, `submitResult`, `finishRound`, `subscribe`.
+- The local backend copies the SQL rules (host-only start, min 2 players, deadline, late joiners, points), so local tests behave like production.
 
 ### js/ui.js
 - All DOM reading and writing lives here.
 - Cards show rank and suit. Hearts and diamonds are red.
 - Must work on a 375px-wide phone screen and on a laptop.
+
+## Live rooms
+
+- **Flow:** host creates a room (`?room=ABCDE` link + code) -> friends join with a name -> lobby shows who's online -> host Start (min 2) -> everyone gets the same deal and timer -> 60s memorize -> flip -> 30s to lock in -> results when everyone has locked in or time runs out -> host Next round. Points 3 / 2 / 1 per round; not locked in = no hand, ranked last.
+- **Identity:** Supabase anonymous sign-in, kept in localStorage, so a refreshed tab is the same player and skips the name screen. Local test mode uses sessionStorage (one tab = one player).
+- **Timing:** `rooms.start_at` is set by the server (`start_round`). Clients convert with a clock offset from `server_now()`.
+- **Security:** see `supabase/schema.sql`. RLS + column grants: read all; write only your own player row (name, result columns); points and rooms change only through the `start_round` / `finish_round` functions. The publishable key is safe in `config.js`; never the secret key.
+- **Hands aren't hidden from devtools** before the reveal (rows are readable). Fine for friends, same as solo.
+- **Known limits:** if the host leaves, nobody can start the next round. Rooms are deleted after 24 hours.
+- Setup and the manual test plan: `docs/SUPABASE_SETUP.md`.
 
 ## Testing requirements
 
@@ -134,7 +173,7 @@ package.json                  "type": "module" + npm scripts; no dependencies
 - Tie-breaks: higher pair wins; same pair compares kickers; equal hands return 0.
 - `bestPair` returns the true best on a few hand-built grids.
 
-Run all tests after any change to `rng.js`, `deck.js` or `handEvaluator.js`.
+Run all tests after any change to `rng.js`, `deck.js`, `handEvaluator.js` or `liveRules.js`. After changing `supabase/schema.sql`, keep `localBackend.js` and `rankRound` in step.
 
 ## Known limits
 
@@ -142,4 +181,4 @@ Run all tests after any change to `rng.js`, `deck.js` or `handEvaluator.js`.
 
 ## Not in scope yet
 
-- Live multiplayer rooms (planned later, using Supabase Realtime).
+- Handing the host role to someone else if the host leaves.

@@ -34,12 +34,37 @@
   <main class="app">
     <header class="app-header">
       <h1>Memory Poker</h1>
+      <a id="home-link" class="home-link" href="/memory-poker/" hidden>← Home</a>
+      <p id="mode-banner" class="mode-banner" hidden></p>
       <p id="from-banner" class="from-banner" hidden></p>
     </header>
 
-    <!-- SETUP -->
-    <section id="screen-setup" class="screen" aria-labelledby="setup-title">
-      <h2 id="setup-title" class="visually-hidden">Set up a game</h2>
+    <!-- HOME -->
+    <section id="screen-home" class="screen" aria-labelledby="home-title" hidden>
+      <h2 id="home-title" class="visually-hidden">Choose how to play</h2>
+      <ol class="how-to">
+        <li>Memorize the cards for 60 seconds. Then they flip face down.</li>
+        <li>3 open cards appear. Pick 2 face-down cards to join them.</li>
+        <li>Make the best 5-card poker hand you can.</li>
+      </ol>
+      <div class="home-actions">
+        <button id="home-solo" type="button" class="btn btn-primary">Play solo</button>
+        <button id="home-friends" type="button" class="btn">Play with friends</button>
+      </div>
+      <form id="join-code-form" class="join-code">
+        <label for="join-code">Have a room code?</label>
+        <div class="join-code-row">
+          <input id="join-code" name="code" maxlength="5" autocomplete="off" autocapitalize="characters"
+                 spellcheck="false" placeholder="ABCDE" inputmode="text">
+          <button type="submit" class="btn">Join</button>
+        </div>
+      </form>
+      <p id="home-error" class="form-error" role="alert"></p>
+    </section>
+
+    <!-- SOLO SETUP -->
+    <section id="screen-setup" class="screen" aria-labelledby="setup-title" hidden>
+      <h2 id="setup-title" class="visually-hidden">Set up a solo game</h2>
       <ol class="how-to">
         <li>Memorize the cards for 60 seconds. Then they flip face down.</li>
         <li>3 open cards appear. Pick 2 face-down cards to join them.</li>
@@ -68,8 +93,54 @@
       </form>
     </section>
 
-    <!-- PLAY (memorize, place, reveal) -->
+    <!-- LIVE SETUP (create or join a room) -->
+    <section id="screen-live-setup" class="screen" aria-labelledby="live-setup-title" hidden>
+      <h2 id="live-setup-title" class="screen-title">Play with friends</h2>
+      <p id="live-setup-intro" class="screen-intro"></p>
+      <form id="live-form" class="setup-form">
+        <fieldset id="live-size" class="size-picker">
+          <legend>How many cards?</legend>
+          <label class="size-option">
+            <input type="radio" name="n" value="8" checked>
+            <span>8 cards</span>
+          </label>
+          <label class="size-option">
+            <input type="radio" name="n" value="16">
+            <span>16 cards</span>
+          </label>
+        </fieldset>
+        <label class="name-field">
+          <span>Your name</span>
+          <input type="text" name="name" maxlength="20" autocomplete="nickname" required>
+        </label>
+        <button id="live-submit" type="submit" class="btn btn-primary">Create room</button>
+        <p id="live-error" class="form-error" role="alert"></p>
+      </form>
+    </section>
+
+    <!-- LOBBY -->
+    <section id="screen-lobby" class="screen" aria-labelledby="lobby-title" hidden>
+      <h2 id="lobby-title" class="visually-hidden">Room lobby</h2>
+      <p class="room-label">Room code</p>
+      <p id="lobby-code" class="room-code"></p>
+      <div class="lobby-link">
+        <label for="lobby-link" class="visually-hidden">Room link</label>
+        <input id="lobby-link" readonly>
+        <button id="copy-link" type="button" class="btn">Copy link</button>
+      </div>
+      <p id="lobby-note" class="status" aria-live="polite"></p>
+      <h3 class="row-label">Players</h3>
+      <ul id="lobby-players" class="player-list" aria-live="polite"></ul>
+      <div class="lobby-actions">
+        <button id="start-round" type="button" class="btn btn-primary" hidden>Start</button>
+        <p id="lobby-wait" class="status" aria-live="polite"></p>
+        <button type="button" class="btn-link leave-room">Leave room</button>
+      </div>
+    </section>
+
+    <!-- PLAY (memorize, place, reveal) — solo and live -->
     <section id="screen-play" class="screen" hidden>
+      <p id="live-bar" class="live-bar" hidden></p>
       <div class="status-bar">
         <div id="countdown" class="countdown" aria-live="off"></div>
         <p id="status" class="status" aria-live="polite"></p>
@@ -97,12 +168,35 @@
         </p>
       </div>
 
+      <div id="leaderboard" class="leaderboard result" hidden aria-live="polite">
+        <h2 id="lb-title" class="lb-title" tabindex="-1"></h2>
+        <p id="lb-best" class="lb-best"></p>
+        <div class="lb-scroll">
+          <table class="lb-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Player</th><th scope="col">Hand</th>
+                  <th scope="col">Time</th><th scope="col">Round</th><th scope="col">Total</th></tr>
+            </thead>
+            <tbody id="lb-rows"></tbody>
+          </table>
+        </div>
+        <p class="legend">
+          <span class="legend-mark legend-yours" aria-hidden="true"></span> Your picks
+          <span class="legend-mark legend-best" aria-hidden="true"></span> Best pair
+        </p>
+        <p id="lb-note" class="status"></p>
+      </div>
+
       <div class="actions">
         <button id="lock-in" type="button" class="btn btn-primary" disabled hidden>Lock in</button>
         <div id="reveal-actions" class="reveal-actions" hidden>
           <button id="share" type="button" class="btn btn-primary">Share result</button>
           <button id="play-again" type="button" class="btn">Play same deal again</button>
           <button id="new-deal" type="button" class="btn">New deal</button>
+        </div>
+        <div id="live-actions" class="reveal-actions" hidden>
+          <button id="next-round" type="button" class="btn btn-primary" hidden>Next round</button>
+          <button type="button" class="btn leave-room">Leave room</button>
         </div>
       </div>
     </section>
