@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memory Poker</title>
+  <meta name="description" content="Memorize the cards, pick 2, and make the best poker hand. Challenge your friends to the same deal.">
+  <link rel="canonical" href="https://juileebhosale.com/memory-poker/">
+
+  <!-- Paths are absolute (/memory-poker/...) so the page works with or without a trailing slash. -->
+  <link rel="icon" href="/memory-poker/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/memory-poker/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/memory-poker/apple-touch-icon.png">
+  <meta name="theme-color" content="#0b3d26">
+  <link rel="stylesheet" href="/memory-poker/styles.css">
+
+  <!-- Link previews (Open Graph + Twitter). Image URL must be absolute. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Juilee Bhosale">
+  <meta property="og:title" content="Memory Poker">
+  <meta property="og:description" content="Memorize the cards, pick 2, and make the best poker hand. Challenge your friends to the same deal.">
+  <meta property="og:url" content="https://juileebhosale.com/memory-poker/">
+  <meta property="og:image" content="https://juileebhosale.com/memory-poker/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Memory Poker: two face-down cards with markers next to three open cards">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Memory Poker">
+  <meta name="twitter:description" content="Memorize the cards, pick 2, and make the best poker hand. Challenge your friends to the same deal.">
+  <meta name="twitter:image" content="https://juileebhosale.com/memory-poker/og-image.png">
+  <meta name="twitter:image:alt" content="Memory Poker: two face-down cards with markers next to three open cards">
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>Memory Poker</h1>
+      <p id="from-banner" class="from-banner" hidden></p>
+    </header>
+
+    <!-- SETUP -->
+    <section id="screen-setup" class="screen" aria-labelledby="setup-title">
+      <h2 id="setup-title" class="visually-hidden">Set up a game</h2>
+      <ol class="how-to">
+        <li>Memorize the cards for 60 seconds. Then they flip face down.</li>
+        <li>3 open cards appear. Pick 2 face-down cards to join them.</li>
+        <li>Make the best 5-card poker hand you can.</li>
+      </ol>
+
+      <form id="setup-form" class="setup-form">
+        <fieldset class="size-picker">
+          <legend>How many cards?</legend>
+          <label class="size-option">
+            <input type="radio" name="n" value="8" checked>
+            <span>8 cards</span>
+          </label>
+          <label class="size-option">
+            <input type="radio" name="n" value="16">
+            <span>16 cards</span>
+          </label>
+        </fieldset>
+
+        <label class="name-field">
+          <span>Your name <small>(optional)</small></span>
+          <input type="text" name="name" maxlength="20" autocomplete="nickname">
+        </label>
+
+        <button type="submit" class="btn btn-primary">Start</button>
+      </form>
+    </section>
+
+    <!-- PLAY (memorize, place, reveal) -->
+    <section id="screen-play" class="screen" hidden>
+      <div class="status-bar">
+        <div id="countdown" class="countdown" aria-live="off"></div>
+        <p id="status" class="status" aria-live="polite"></p>
+        <p class="kbd-hint">Keys: type a letter to pick a card · Enter to lock in</p>
+      </div>
+
+      <div id="grid" class="grid" role="group" aria-label="Grid cards"></div>
+
+      <div id="open-row" class="open-row" hidden>
+        <h2 class="row-label">Open cards</h2>
+        <div id="open-cards" class="open-cards"></div>
+      </div>
+
+      <div id="result" class="result" hidden aria-live="polite">
+        <p id="result-badge" class="badge" tabindex="-1"></p>
+        <dl class="result-lines">
+          <div><dt>Your hand</dt><dd><span id="your-hand"></span> <span id="your-cards" class="hand-cards"></span></dd></div>
+          <div><dt>Best possible</dt><dd id="best-hand"></dd></div>
+          <div><dt>Best cards</dt><dd id="best-letters"></dd></div>
+          <div><dt>Lock-in time</dt><dd id="lock-time"></dd></div>
+        </dl>
+        <p class="legend">
+          <span class="legend-mark legend-yours" aria-hidden="true"></span> Your picks
+          <span class="legend-mark legend-best" aria-hidden="true"></span> Best pair
+        </p>
+      </div>
+
+      <div class="actions">
+        <button id="lock-in" type="button" class="btn btn-primary" disabled hidden>Lock in</button>
+        <div id="reveal-actions" class="reveal-actions" hidden>
+          <button id="share" type="button" class="btn btn-primary">Share result</button>
+          <button id="play-again" type="button" class="btn">Play same deal again</button>
+          <button id="new-deal" type="button" class="btn">New deal</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/memory-poker/js/game.js"></script>
+</body>
+</html>

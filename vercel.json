@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    { "source": "/", "destination": "/memory-poker/", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/memory-poker", "destination": "/memory-poker/index.html" }
+  ]
+}

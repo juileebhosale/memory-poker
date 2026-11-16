@@ -1,0 +1,7 @@
+# Only memory-poker/ and vercel.json need to be online. Keep the rest out of the deploy.
+tests/
+tools/
+.github/
+CLAUDE.md
+README.md
+package.json

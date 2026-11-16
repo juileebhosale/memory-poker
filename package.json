@@ -1,0 +1,10 @@
+{
+  "name": "memory-poker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "dev": "node tools/dev-server.mjs",
+    "images": "python3 tools/make_images.py"
+  }
+}

@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Node (no dependencies today, but just in case)
+node_modules/
+
+# Vercel CLI
+.vercel/
