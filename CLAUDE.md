@@ -80,7 +80,8 @@ package.json                  "type": "module" + npm scripts; no dependencies
 ## Hosting
 
 - **Public URL:** https://juileebhosale.com/memory-poker/
-- **Setup:** this repo is its own Vercel project (static, no build step, output directory = repo root). The personal site (a separate Next.js project, `juileebhosale-website`) forwards `/memory-poker` and `/memory-poker/*` to this project with a Next.js rewrite.
+- **Vercel project:** `memory-poker` in "Juilee Bhosale's projects". Production URL: https://memory-poker-ruddy.vercel.app (the game is at `/memory-poker/`). Connected to GitHub `juileebhosale/memory-poker`: every push to `main` deploys to production; other branches get preview URLs. No custom domain on this project.
+- **Setup:** this repo is its own Vercel project (static, no build step, output directory = repo root). `.vercelignore` keeps `tests/`, `tools/`, notes and `package.json` off the live site. The personal site (a separate Next.js project, `juileebhosale-website`) forwards `/memory-poker` and `/memory-poker/*` to this project with a Next.js rewrite.
 - **Why everything is under `memory-poker/`:** the page is served at the same path on every host (this project's `.vercel.app` URL, the personal site, and localhost), so one set of paths works everywhere.
 - **Trailing slash:** Next.js strips trailing slashes, so the page is often loaded as `/memory-poker` (no slash). Relative paths like `js/game.js` would then resolve to `/js/game.js` and break. Rules:
   - In `index.html`, every script, stylesheet, icon and image path is **absolute** and starts with `/memory-poker/` (for example `/memory-poker/js/game.js`).
