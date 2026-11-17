@@ -86,7 +86,9 @@ export function shareText({ n, seed, yourName, bestName, perfect, lockInMs, link
 export function setUrlParams(params) {
   try {
     const url = new URL(window.location.href);
+    const keepLocal = url.searchParams.get('backend') === 'local'; // dev: stay in local test mode
     url.search = '';
+    if (keepLocal) url.searchParams.set('backend', 'local');
     for (const [k, v] of Object.entries(params)) if (v !== '' && v != null) url.searchParams.set(k, String(v));
     window.history.replaceState(null, '', url);
   } catch {

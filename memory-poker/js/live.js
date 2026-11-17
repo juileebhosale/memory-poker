@@ -41,6 +41,12 @@ const S = {
 
 const serverNow = () => Date.now() + S.offset;
 
+// Room link to share. In local test mode it keeps backend=local so other tabs stay local too.
+function shareableRoomLink(code) {
+  const link = roomLink(window.location.origin, code);
+  return S.backend?.kind === 'local' ? `${link}&backend=local` : link;
+}
+
 function later(fn, ms) {
   const id = setTimeout(() => { S.timers.delete(id); fn(); }, Math.max(0, ms));
   S.timers.add(id);
@@ -159,7 +165,7 @@ export async function submitSetup({ n, name }) {
 }
 
 export async function copyLink() {
-  const link = roomLink(window.location.origin, S.code);
+  const link = shareableRoomLink(S.code);
   if (navigator.share && matchMedia('(pointer: coarse)').matches) {
     try {
       await navigator.share({ title: 'Memory Poker', text: `Join my Memory Poker room ${S.code}`, url: link });
@@ -292,7 +298,9 @@ function renderLobby(error = '') {
   }
   const { room, players, me } = S;
   const host = isHost();
-  const online = players.filter((p) => S.online.has(p.userId));
+  // You're always online to yourself; others show once the realtime "who's here" list syncs.
+  const isOnline = (p) => p.id === me.id || S.online.has(p.userId);
+  const online = players.filter(isOnline);
   const canStart = host && room.status !== 'playing' && players.length >= MIN_PLAYERS && online.length >= MIN_PLAYERS;
   const sittingOut = me.joinedRound > room.round && room.round > 0;
 
@@ -306,12 +314,12 @@ function renderLobby(error = '') {
   ui.setLiveBar('');
   ui.showLobby({
     code: room.id,
-    link: roomLink(window.location.origin, room.id),
+    link: shareableRoomLink(room.id),
     players: players.map((p) => ({
       name: p.name,
       isHost: p.userId === room.hostUserId,
       isMe: p.id === me.id,
-      online: S.online.has(p.userId),
+      online: isOnline(p),
     })),
     isHost: host,
     canStart,
