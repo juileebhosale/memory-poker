@@ -15,6 +15,8 @@ export function memorizeMs(n) {
   return MEMORIZE_MS_BY_N[n] ?? 60_000;
 }
 export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = 12;          // per room (also enforced in schema.sql)
+export const MAX_ROOMS_PER_HOUR = 10;   // per person (also enforced in schema.sql)
 
 // Phase of a round at server time `now`.
 //   countdown: before startAt ("Starting in 3...")

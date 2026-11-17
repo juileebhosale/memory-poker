@@ -131,3 +131,18 @@ test('parseParams reads a room code and cleans it up', () => {
 test('roomLink is origin + /memory-poker/?room=CODE', () => {
   assert.equal(roomLink('https://juileebhosale.com', 'ABCDE'), 'https://juileebhosale.com/memory-poker/?room=ABCDE');
 });
+
+// ---------- Strangers: names in links ----------
+import { cleanName } from '../memory-poker/js/game.js';
+
+test('a blocked name in a shared link is dropped (no banner)', () => {
+  assert.equal(parseParams('?seed=a&n=8&from=sh1t').from, '');
+  assert.equal(parseParams('?seed=a&n=8&from=Sam').from, 'Sam');
+});
+
+test('cleanName trims, caps at 20 and drops blocked names', () => {
+  assert.equal(cleanName('  Juilee  '), 'Juilee');
+  assert.equal(cleanName('x'.repeat(30)).length, 20);
+  assert.equal(cleanName('f u c k'), '');
+  assert.equal(cleanName(null), '');
+});

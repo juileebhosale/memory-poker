@@ -740,3 +740,24 @@ body {
   font-size: 0.78rem;
   font-weight: 400;
 }
+
+/* Footer: feedback + GitHub links */
+.site-footer {
+  margin: 32px auto 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 10px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.site-footer a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 4px 2px;
+}
+.site-footer a:hover,
+.site-footer a:focus-visible { color: var(--text); }

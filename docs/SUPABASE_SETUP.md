@@ -94,6 +94,31 @@ Use the Vercel preview URL for the `live-rooms` branch first, then production af
 17. Phone: Leave room. It goes back to home, and it disappears from the others' list.
 18. Open a made-up code (e.g. `?room=ZZZZZ`). It says the room wasn't found.
 
+## 5. Stats, analytics and keep-awake
+
+**Game counts (Supabase).** SQL Editor → New query, then save it as "Memory Poker stats":
+```sql
+-- Last 30 days, newest first (days are Chicago time)
+select * from daily_stats order by day desc limit 30;
+
+-- Totals
+select sum(solo_games) as solo_games, sum(rooms_created) as rooms, sum(players_joined) as live_players,
+       sum(rounds_played) as live_rounds, sum(live_hands) as live_hands
+from daily_stats;
+```
+Unique live players per month: **Authentication → Users** (each browser is one anonymous user), or the
+"Monthly active users" figure on the project's **Usage** page.
+
+**Page views (Vercel Web Analytics, free, no cookies).** The page already includes the script.
+Turn it on in Vercel: open the **juileebhosale-website** project → **Analytics** → **Enable**.
+(Visits to juileebhosale.com/memory-poker are counted there, as the path `/memory-poker`.)
+Optional: do the same in the **memory-poker** project to count visits to the `.vercel.app` address.
+
+**Keep-awake.** Free Supabase projects are paused after a week with no activity.
+`.github/workflows/keep-supabase-awake.yml` asks the database for the time every 3 days.
+Check it once: GitHub → repo → **Actions** → **Keep Supabase awake** → **Run workflow**; it should go green.
+GitHub stops scheduled jobs after 60 days with no commits (it emails first); if so, click **Enable workflow** there.
+
 ## Troubleshooting
 
 | What you see | Likely cause |
@@ -103,3 +128,6 @@ Use the Vercel preview URL for the `live-rooms` branch first, then production af
 | Players don't appear until refresh | Realtime publication missing. Run the SQL again. Check **Database → Publications → supabase_realtime** lists `rooms` and `players`. |
 | Countdowns differ by several seconds | One device couldn't reach `server_now()`. Check the browser console for errors. |
 | Banner says "Local test mode" on the live site | `config.js` is empty, or the link has `backend=local`. |
+| "This room is full (12 players max)" | By design. Change the limit in `schema.sql` (`>= 12`) and `MAX_PLAYERS` in `liveRules.js`, then re-run the SQL. |
+| "Please choose a different name" for a normal name | The filter caught part of it. Add the word to `ALLOWED` in `nameFilter.js` and `allowed` in `name_is_blocked()`, then re-run the SQL. |
+| Supabase project paused | Open the project in the dashboard and click **Restore**. Then check the keep-awake job is enabled. |

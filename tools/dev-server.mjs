@@ -23,6 +23,11 @@ const TYPES = {
 
 createServer(async (req, res) => {
   const { pathname } = new URL(req.url, 'http://localhost');
+  if (pathname.startsWith('/_vercel/')) {
+    // Vercel Web Analytics only exists on Vercel. Locally, answer with an empty script.
+    res.writeHead(200, { 'Content-Type': 'text/javascript' }).end('');
+    return;
+  }
   if (pathname === '/') {
     res.writeHead(307, { Location: '/memory-poker/' }).end();
     return;

@@ -8,6 +8,8 @@
 --   * A player can only add, change or delete THEIR OWN player row (only certain columns).
 --   * Only the host can start a round (start_round). Rooms can't be edited directly.
 --   * Points are only ever changed by finish_round, never by a browser.
+--   * Rooms hold at most 12 players; at most 10 new rooms per person per hour; names are filtered.
+--   * daily_stats keeps simple daily counts that only you can read.
 
 -- ---------------------------------------------------------------------------
 -- Tables
@@ -93,6 +95,98 @@ create policy "players: leave (delete your own row)" on public.players
   for delete to authenticated using (user_id = (select auth.uid()));
 
 -- ---------------------------------------------------------------------------
+-- Limits for sharing with strangers (keep in step with liveRules.js / nameFilter.js)
+--   * at most 12 players per room
+--   * at most 10 new rooms per person per hour
+--   * player names go through a small blocked-words filter
+-- ---------------------------------------------------------------------------
+
+-- Same lists and rules as memory-poker/js/nameFilter.js.
+create or replace function public.name_is_blocked(p_name text)
+returns boolean
+language plpgsql
+immutable
+as $$
+declare
+  anywhere text[] := array['nigger', 'nigga', 'faggot', 'retard', 'tranny', 'kike', 'chink', 'wetback', 'beaner', 'fuck', 'shit', 'cunt', 'bitch', 'whore', 'slut', 'pussy', 'asshole', 'bastard', 'rapist', 'hitler', 'nazi', 'porn', 'penis', 'vagina', 'dildo'];
+  whole    text[] := array['fag', 'spic', 'dick', 'cock', 'sex', 'ass', 'tit', 'tits', 'kkk', 'cum', 'rape'];
+  allowed  text[] := array['scunthorpe', 'therapist', 'shitake', 'shiitake', 'cockburn'];
+  words    text[];
+  pieces   text[] := '{}';
+  w        text;
+  run      text := '';
+begin
+  -- lower case, look-alike symbols to letters ("sh1t" -> "shit"), split into words
+  words := array_remove(
+    regexp_split_to_array(translate(lower(coalesce(p_name, '')), '0134578@$!', 'oieastbasi'), '[^a-z]+'),
+    '');
+  foreach w in array words || array['']::text[] loop   -- '' at the end flushes the last run
+    if w = any(whole) then return true; end if;
+    if char_length(w) = 1 then
+      run := run || w;                                  -- "f u c k" -> "fuck"
+    else
+      if char_length(run) > 1 then pieces := pieces || run; end if;
+      run := '';
+      if w <> '' and not (w = any(allowed)) then pieces := pieces || w; end if;
+    end if;
+  end loop;
+  foreach w in array pieces loop
+    if w = any(whole) then return true; end if;
+    if exists (select 1 from unnest(anywhere) a where position(a in w) > 0) then return true; end if;
+  end loop;
+  return false;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Daily stats (only you can read them: SQL Editor, or Table Editor -> daily_stats)
+-- Days are in Chicago time. Rooms are deleted after 24h; these counts are kept.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.daily_stats (
+  day             date primary key,
+  solo_games      int not null default 0,   -- solo games finished (locked in)
+  rooms_created   int not null default 0,
+  players_joined  int not null default 0,   -- player rows created in live rooms
+  rounds_played   int not null default 0,   -- live rounds started
+  live_hands      int not null default 0    -- live hands locked in (counted when a round ends)
+);
+
+revoke all on public.daily_stats from anon, authenticated;
+alter table public.daily_stats enable row level security;   -- no policies: not readable from the browser
+
+create or replace function public.bump_stat(p_col text, p_by int default 1)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_col not in ('solo_games', 'rooms_created', 'players_joined', 'rounds_played', 'live_hands') then
+    raise exception 'Unknown stat %', p_col;
+  end if;
+  if p_by is null or p_by <= 0 then return; end if;
+  execute format(
+    'insert into public.daily_stats (day, %1$I) values ((now() at time zone ''America/Chicago'')::date, $1)
+     on conflict (day) do update set %1$I = public.daily_stats.%1$I + excluded.%1$I', p_col)
+  using p_by;
+end;
+$$;
+
+revoke all on function public.bump_stat(text, int) from public, anon, authenticated;
+
+-- Called by the page when someone finishes a solo game. No sign-in needed; it can only add 1.
+create or replace function public.record_solo_game()
+returns void
+language sql
+security definer
+set search_path = public
+as $$ select public.bump_stat('solo_games', 1) $$;
+
+revoke all on function public.record_solo_game() from public;
+grant execute on function public.record_solo_game() to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Timing (keep in step with memorizeMs() in memory-poker/js/liveRules.js)
 -- ---------------------------------------------------------------------------
 
@@ -127,6 +221,12 @@ begin
     raise exception 'Room % not found', new.room_id;
   end if;
   new.name := btrim(new.name);
+  if public.name_is_blocked(new.name) then
+    raise exception 'Please choose a different name.';
+  end if;
+  if (select count(*) from public.players where room_id = new.room_id) >= 12 then
+    raise exception 'This room is full (12 players max).';
+  end if;
   return new;
 end;
 $$;
@@ -162,6 +262,9 @@ begin
     end if;
   end if;
   new.name := btrim(new.name);
+  if new.name is distinct from old.name and public.name_is_blocked(new.name) then
+    raise exception 'Please choose a different name.';
+  end if;
   return new;
 end;
 $$;
@@ -170,6 +273,50 @@ drop trigger if exists players_check_result_timing on public.players;
 create trigger players_check_result_timing
   before update on public.players
   for each row execute function public.check_result_timing();
+
+-- At most 10 new rooms per person per hour.
+create or replace function public.limit_rooms_per_hour()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if (select count(*) from public.rooms
+       where host_user_id = new.host_user_id and created_at > now() - interval '1 hour') >= 10 then
+    raise exception 'You''ve made a lot of rooms in the last hour. Please try again later.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists rooms_limit_per_hour on public.rooms;
+create trigger rooms_limit_per_hour
+  before insert on public.rooms
+  for each row execute function public.limit_rooms_per_hour();
+
+-- Stats: count new rooms and new players.
+create or replace function public.count_new_row()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.bump_stat(tg_argv[0], 1);
+  return null;
+end;
+$$;
+
+drop trigger if exists rooms_count_created on public.rooms;
+create trigger rooms_count_created
+  after insert on public.rooms
+  for each row execute function public.count_new_row('rooms_created');
+
+drop trigger if exists players_count_joined on public.players;
+create trigger players_count_joined
+  after insert on public.players
+  for each row execute function public.count_new_row('players_joined');
 
 -- ---------------------------------------------------------------------------
 -- Functions the browser calls
@@ -219,6 +366,7 @@ begin
          start_at = clock_timestamp() + interval '5 seconds'
    where id = p_room
   returning * into r;
+  perform public.bump_stat('rounds_played', 1);
   return r;
 end;
 $$;
@@ -279,6 +427,9 @@ begin
    where p.id = ranked.id and ranked.rn <= 3;
 
   update public.rooms set status = 'reveal', scored_round = r.round where id = p_room;
+  perform public.bump_stat('live_hands',
+    (select count(*)::int from public.players p
+      where p.room_id = p_room and p.round = r.round and p.hand_category is not null));
   return 'reveal';
 end;
 $$;

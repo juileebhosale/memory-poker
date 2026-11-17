@@ -6,7 +6,8 @@
 // (id kept in sessionStorage, so a refreshed tab is still the same player).
 // Changes are announced to other tabs with BroadcastChannel.
 // navigator.locks makes each change atomic across tabs.
-import { roundTimeline, START_DELAY_MS, MIN_PLAYERS, ROUND_POINTS, rankRound } from './liveRules.js';
+import { roundTimeline, START_DELAY_MS, MIN_PLAYERS, MAX_PLAYERS, MAX_ROOMS_PER_HOUR, ROUND_POINTS, rankRound } from './liveRules.js';
+import { isNameBlocked } from './nameFilter.js';
 
 const DB_KEY = 'memory-poker-local-db';
 const USER_KEY = 'memory-poker-local-user';
@@ -70,6 +71,9 @@ export async function createLocalBackend() {
     async createRoom({ id, seed, n }) {
       const room = await tx((db) => {
         if (db.rooms[id]) return null;
+        const recent = Object.values(db.rooms)
+          .filter((r) => r.hostUserId === userId && r.createdAt > Date.now() - 3_600_000).length;
+        if (recent >= MAX_ROOMS_PER_HOUR) fail("You've made a lot of rooms in the last hour. Please try again later.");
         db.rooms[id] = {
           id, seed, n, status: 'lobby', round: 0, startAt: null,
           hostUserId: userId, scoredRound: 0, createdAt: Date.now(),
@@ -92,11 +96,13 @@ export async function createLocalBackend() {
       const player = await tx((db) => {
         const room = db.rooms[roomId];
         if (!room) fail('Room not found');
+        if (isNameBlocked(name)) fail('Please choose a different name.');
         const existing = Object.values(db.players).find((p) => p.roomId === roomId && p.userId === userId);
         if (existing) {
           existing.name = name.trim();
           return existing;
         }
+        if (roomPlayers(db, roomId).length >= MAX_PLAYERS) fail(`This room is full (${MAX_PLAYERS} players max).`);
         const p = {
           id: uuid(), roomId, userId, name: name.trim(), joinedRound: room.round + 1,
           round: null, markerA: null, markerB: null, handCategory: null, handTiebreak: null,

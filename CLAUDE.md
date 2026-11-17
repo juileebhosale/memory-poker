@@ -77,8 +77,11 @@ memory-poker/                 everything the browser loads (served at /memory-po
   js/supabaseBackend.js       live backend: Supabase (Postgres + Realtime + anonymous sign-in)
   js/localBackend.js          live backend: local test mode (one browser, several tabs)
   js/config.js                Supabase URL + publishable key (empty = local test mode)
+  js/nameFilter.js            blocked-words filter for player names (same lists as SQL name_is_blocked)
+  js/stats.js                 counts finished solo games in Supabase daily_stats (skipped on localhost)
   vendor/                     supabase-js single-file build + its licence
-supabase/schema.sql           tables, permissions, RLS, functions, realtime, cleanup job
+supabase/schema.sql           tables, permissions, RLS, functions, limits, stats, realtime, cleanup job
+.github/workflows/keep-supabase-awake.yml   pings Supabase every 3 days so the free project isn't paused
 docs/SUPABASE_SETUP.md        dashboard setup steps + live test plan
 tests/                        node --test (imports from ../memory-poker/js/)
 tools/make_images.py          generates og-image.png and PNG icons (needs Pillow)
@@ -162,6 +165,15 @@ package.json                  "type": "module" + npm scripts; no dependencies
 - **Security:** see `supabase/schema.sql`. RLS + column grants: read all; write only your own player row (name, result columns); points and rooms change only through the `start_round` / `finish_round` functions. The publishable key is safe in `config.js`; never the secret key.
 - **Hands aren't hidden from devtools** before the reveal (rows are readable). Fine for friends, same as solo.
 - **Known limits:** if the host leaves, nobody can start the next round. Rooms are deleted after 24 hours.
+
+## Sharing with strangers
+
+- **Limits (database + `liveRules.js`):** 12 players per room (`MAX_PLAYERS`), 10 new rooms per person per hour (`MAX_ROOMS_PER_HOUR`), Supabase's 30 anonymous sign-ins per hour per IP.
+- **Name filter:** `js/nameFilter.js` and SQL `name_is_blocked()` hold the same word lists. Change both together; `tests/nameFilter.test.js` lists names that must pass and fail. Blocked names: live rooms refuse them; solo just leaves them out of share links; a blocked `from=` in a link shows no banner.
+- **Stats:** `daily_stats` (Chicago days): solo_games, rooms_created, players_joined, rounds_played, live_hands. Only readable in the Supabase dashboard. Solo games are counted with `record_solo_game()` (anon can call it; it can only add 1).
+- **Page views:** Vercel Web Analytics script in `index.html` (`/_vercel/insights/script.js`, no cookies). On juileebhosale.com it's served by the personal site's Vercel project, so enable Web Analytics there.
+- **Keep-awake:** free Supabase projects pause after a week without activity; the GitHub job pings `server_now()` every 3 days.
+- **Feedback:** footer links to the Tally form (https://tally.so/r/vXDN6g) and the GitHub repo.
 - Setup and the manual test plan: `docs/SUPABASE_SETUP.md`.
 
 ## Testing requirements

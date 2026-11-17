@@ -11,6 +11,7 @@ import {
 } from './liveRules.js';
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
 import { newSeed, roomLink, setUrlParams, saveName, savedName, NAME_MAX } from './game.js';
+import { isNameBlocked } from './nameFilter.js';
 
 const FINISH_AFTER_DEADLINE_MS = 2_500; // server allows 2s grace; ask just after it
 const FINISH_RETRY_MS = 2_000;
@@ -132,6 +133,10 @@ export async function submitSetup({ n, name }) {
   const clean = name.trim().slice(0, NAME_MAX);
   if (!clean) {
     ui.setLiveError('Please enter your name.');
+    return;
+  }
+  if (isNameBlocked(clean)) {
+    ui.setLiveError('Please choose a different name.');
     return;
   }
   saveName(clean);

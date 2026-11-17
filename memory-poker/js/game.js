@@ -8,6 +8,8 @@ import {
   toggleMarker, secondsLeft, letterToIndex,
 } from './round.js';
 import { normalizeRoomCode, memorizeMs } from './liveRules.js';
+import { isNameBlocked } from './nameFilter.js';
+import { recordSoloGame } from './stats.js';
 
 // Re-exported so existing tests and callers keep working.
 export { toggleMarker, secondsLeft, letterToIndex };
@@ -18,6 +20,12 @@ const NAME_KEY = 'memory-poker-name';
 
 // ---------- Pure helpers (tested in Node) ----------
 
+// Trim, cap at NAME_MAX, and drop names that fail the filter ('' = no name).
+export function cleanName(raw) {
+  const name = String(raw ?? '').trim().slice(0, NAME_MAX);
+  return name && !isNameBlocked(name) ? name : '';
+}
+
 // Read ?seed=&n=&from=&room= from a query string. n is null if missing or invalid.
 export function parseParams(search) {
   const p = new URLSearchParams(search);
@@ -25,7 +33,7 @@ export function parseParams(search) {
   return {
     seed: p.get('seed') || null,
     n: n === 8 || n === 16 ? n : null,
-    from: (p.get('from') ?? '').trim().slice(0, NAME_MAX),
+    from: cleanName(p.get('from')),
     room: normalizeRoomCode(p.get('room')),
   };
 }
@@ -187,7 +195,7 @@ function enterSetup() {
 function startGame({ n, name }) {
   state.mode = 'solo';
   state.n = n;
-  state.name = name.slice(0, NAME_MAX);
+  state.name = cleanName(name); // a blocked name is just left out of share links
   saveName(state.name);
   if (!state.seed) state.seed = newSeed();
   writeSoloUrl();
@@ -213,6 +221,7 @@ function startGame({ n, name }) {
       state.markers = markers;
       state.lockInMs = lockInMs;
       enterReveal();
+      recordSoloGame();
     },
   });
 }

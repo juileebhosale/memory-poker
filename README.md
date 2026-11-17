@@ -35,6 +35,10 @@ Play solo, then press **Share result**. The link has the same `seed`, so friends
 
 Link format: `/memory-poker/?seed=<seed>&n=<8|16>&from=<your name>`
 
+## Feedback
+
+Found a bug or have an idea? [Send feedback](https://tally.so/r/vXDN6g). Enjoying it? A ⭐ on this repo is a nice thank-you.
+
 ## Run locally
 
 Needs [Node.js](https://nodejs.org/) 18 or newer. No packages to install.
