@@ -759,8 +759,19 @@ body {
 .footer-links a + a { border-left: 1px solid rgba(255, 255, 255, 0.3); }
 .footer-links a:hover,
 .footer-links a:focus-visible { color: var(--text); }
-/* Too narrow for one row: stack the links, no dividers. */
-@media (max-width: 389px) {
+/* Very narrow screens: stack the two links, no divider. */
+@media (max-width: 299px) {
   .footer-links { flex-direction: column; }
   .footer-links a + a { border-left: none; }
 }
+.footer-copyright {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+.footer-copyright a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.footer-copyright a:hover,
+.footer-copyright a:focus-visible { color: var(--text); }

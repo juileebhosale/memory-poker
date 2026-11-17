@@ -173,7 +173,7 @@ package.json                  "type": "module" + npm scripts; no dependencies
 - **Stats:** `daily_stats` (Chicago days): solo_games, rooms_created, players_joined, rounds_played, live_hands. Only readable in the Supabase dashboard. Solo games are counted with `record_solo_game()` (anon can call it; it can only add 1).
 - **Page views:** Vercel Web Analytics script in `index.html` (`/_vercel/insights/script.js`, no cookies). On juileebhosale.com it's served by the personal site's Vercel project, so enable Web Analytics there.
 - **Keep-awake:** free Supabase projects pause after a week without activity; the GitHub job pings `server_now()` every 3 days.
-- **Feedback:** footer links to the Tally form (https://tally.so/r/vXDN6g) and the GitHub repo.
+- **Footer:** Netflix credit line; links to the Tally feedback form (https://tally.so/r/vXDN6g) and the GitHub repo; "© 2026 Juilee Bhosale" with the name linked to juileebhosale.com. No licence file (all rights reserved).
 - Setup and the manual test plan: `docs/SUPABASE_SETUP.md`.
 
 ## Testing requirements
