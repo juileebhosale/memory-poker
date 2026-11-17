@@ -31,10 +31,10 @@ test('secondsLeft rounds up and stops at 0', () => {
 });
 
 test('parseParams reads seed and only accepts n = 8 or 16', () => {
-  assert.deepEqual(parseParams('?seed=k3f9&n=16'), { seed: 'k3f9', n: 16, from: '' });
-  assert.deepEqual(parseParams('?seed=abc&n=8'), { seed: 'abc', n: 8, from: '' });
-  assert.deepEqual(parseParams('?n=10'), { seed: null, n: null, from: '' });
-  assert.deepEqual(parseParams(''), { seed: null, n: null, from: '' });
+  assert.deepEqual(parseParams('?seed=k3f9&n=16'), { seed: 'k3f9', n: 16, from: '', room: '' });
+  assert.deepEqual(parseParams('?seed=abc&n=8'), { seed: 'abc', n: 8, from: '', room: '' });
+  assert.deepEqual(parseParams('?n=10'), { seed: null, n: null, from: '', room: '' });
+  assert.deepEqual(parseParams(''), { seed: null, n: null, from: '', room: '' });
 });
 
 test('newSeed gives short URL-safe strings', () => {
@@ -117,4 +117,17 @@ test('letterToIndex maps letters within the grid only', () => {
   assert.equal(letterToIndex('p', 16), 15);
   assert.equal(letterToIndex('Enter', 16), -1);
   assert.equal(letterToIndex('1', 16), -1);
+});
+
+// ---------- Live rooms: links ----------
+import { roomLink } from '../memory-poker/js/game.js';
+
+test('parseParams reads a room code and cleans it up', () => {
+  assert.equal(parseParams('?room=abcde').room, 'ABCDE');
+  assert.equal(parseParams('?room=ABC').room, '');
+  assert.equal(parseParams('?room=ABCDO').room, '');
+});
+
+test('roomLink is origin + /memory-poker/?room=CODE', () => {
+  assert.equal(roomLink('https://juileebhosale.com', 'ABCDE'), 'https://juileebhosale.com/memory-poker/?room=ABCDE');
 });

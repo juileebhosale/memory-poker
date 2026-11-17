@@ -15,9 +15,21 @@ A browser game. Memorize a grid of cards, watch them flip face down, then pick 2
 
 **Perfect** means you found the best possible hand. Lock-in time breaks ties.
 
-### Play with friends
+### Play with friends — live room
 
-Press **Share result** after a round. The link has the same `seed`, so your friends get exactly the same cards. Compare hands and times.
+1. **Play with friends** → pick 8 or 16 → your name → **Create room**.
+2. Send the link (or the 5-letter code) to your friends. They enter their names and appear in the lobby.
+3. Press **Start**. Everyone gets the same cards and the same timer: 60 seconds to memorize, 30 seconds to lock in.
+4. Results appear when everyone has locked in (or time runs out): best hand first, then fastest. 3 / 2 / 1 points per round.
+5. The host presses **Next round** for new cards. Points add up.
+
+Link format: `/memory-poker/?room=ABCDE`
+
+Live rooms use Supabase. See [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md). Without it, they run in **local test mode** (one browser, several tabs).
+
+### Play with friends — same deal, any time
+
+Play solo, then press **Share result**. The link has the same `seed`, so friends get exactly the same cards whenever they play. Compare hands and times.
 
 Link format: `/memory-poker/?seed=<seed>&n=<8|16>&from=<your name>`
 
@@ -65,6 +77,8 @@ Commit the PNGs. The site has no build step.
 
 ```
 memory-poker/      everything the browser loads (HTML, CSS, JS, images)
+supabase/          schema.sql for live rooms (run once in Supabase)
+docs/              Supabase setup + live test plan
 tests/             unit tests (node --test)
 tools/             dev server + image generator
 vercel.json        Vercel routing: / -> /memory-poker/, serve /memory-poker without a slash
