@@ -96,3 +96,9 @@ CLAUDE.md          full spec and hosting notes
 - Static site on Vercel (project `memory-poker`). No build step; output directory = repo root.
 - The personal site `juileebhosale.com` (a separate Next.js project) forwards `/memory-poker` and `/memory-poker/*` to this project with a rewrite.
 - All page asset paths are absolute (`/memory-poker/...`) so the page works with or without a trailing slash. See CLAUDE.md → Hosting.
+
+## Licence
+
+Code: [MIT](LICENSE) © 2026 Juilee Bhosale. The bundled Supabase library has its own MIT licence in `memory-poker/vendor/`.
+
+Memory Poker is a fan-made game inspired by Netflix's *The Devil's Plan*. It is not affiliated with or endorsed by Netflix. The show's name and concept belong to their owners and are not covered by this licence.
