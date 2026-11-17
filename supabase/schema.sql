@@ -290,13 +290,26 @@ $$;
 -- pg_cron is available on the Free plan.
 -- ---------------------------------------------------------------------------
 
-create extension if not exists pg_cron;
-
-select cron.schedule(
-  'memory-poker-cleanup',            -- same name = replaces the old schedule on re-run
-  '17 * * * *',                      -- every hour at :17
-  $$ delete from public.rooms where created_at < now() - interval '24 hours' $$
-);
+-- If pg_cron can't be switched on here, the rest of this script still works:
+-- you'll see a NOTICE, and you can enable it under Database -> Extensions -> pg_cron, then run this file again.
+do $$
+begin
+  begin
+    create extension if not exists pg_cron;
+  exception when others then
+    raise notice 'Skipped cleanup job: could not enable pg_cron (%). Enable it under Database -> Extensions, then re-run.', sqlerrm;
+    return;
+  end;
+  -- Same job name = replaces the old schedule on re-run. Every hour at :17.
+  execute $cmd$
+    select cron.schedule(
+      'memory-poker-cleanup',
+      '17 * * * *',
+      $job$ delete from public.rooms where created_at < now() - interval '24 hours' $job$
+    )
+  $cmd$;
+end;
+$$;
 
 -- Optional: also remove old anonymous users (friends who haven't played in 30 days).
 -- Uncomment to enable. Their old player rows are deleted with them.

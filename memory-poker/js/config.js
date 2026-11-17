@@ -6,5 +6,5 @@
 // Leave them empty to run live rooms in "local test mode": rooms then live only in this
 // browser (open several tabs to play against yourself). Add ?backend=local to any room
 // link to force local mode even when these are set.
-export const SUPABASE_URL = '';
-export const SUPABASE_KEY = '';
+export const SUPABASE_URL = 'https://dswzoycxwuzicgzgough.supabase.co';
+export const SUPABASE_KEY = 'sb_publishable_oOn15IEL0m4-T0wyyN0uYQ_Zle1DSCB';
