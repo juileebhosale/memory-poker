@@ -721,3 +721,22 @@ body {
   .room-code { font-size: 2.1rem; }
   .lb-table { font-size: 0.82rem; }
 }
+
+/* Home tagline: "Inspired by ... The Devil's Plan" */
+.tagline {
+  max-width: 340px;
+  margin: 0 auto 14px;
+  text-align: center;
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.tagline cite { font-style: italic; }
+.tagline-small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 400;
+}

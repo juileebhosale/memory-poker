@@ -2,6 +2,8 @@
 
 A browser game. Memorize a grid of cards, watch them flip face down, then pick 2 of them to make the best poker hand with 3 open cards.
 
+Inspired by a game from Netflix's *The Devil's Plan*. A fan-made version, not affiliated with or endorsed by Netflix.
+
 **Play:** https://juileebhosale.com/memory-poker/
 
 ## How to play
