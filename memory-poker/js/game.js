@@ -7,11 +7,11 @@ import {
   startRound, stopRound, input, lettersFor,
   toggleMarker, secondsLeft, letterToIndex,
 } from './round.js';
-import { normalizeRoomCode } from './liveRules.js';
+import { normalizeRoomCode, memorizeMs } from './liveRules.js';
 
 // Re-exported so existing tests and callers keep working.
 export { toggleMarker, secondsLeft, letterToIndex };
-export { MEMORIZE_MS, URGENT_SECONDS } from './round.js';
+export { URGENT_SECONDS } from './round.js';
 
 export const NAME_MAX = 20;
 const NAME_KEY = 'memory-poker-name';
@@ -206,6 +206,7 @@ function startGame({ n, name }) {
     grid,
     open,
     startAt: Date.now(),
+    memorizeMs: memorizeMs(n),
     now: Date.now,
     placeMs: null,
     onLocked: ({ markers, lockInMs }) => {

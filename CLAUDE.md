@@ -8,7 +8,7 @@ A browser game. You memorize a grid of cards, they flip face down, then you pick
 2. **Deal.** Shuffle a 52-card deck. Deal that many cards face up into a grid.
    - Positions are labelled A–H (8 cards) or A–P (16 cards).
    - Grid is 4 columns: 2 rows for 8 cards, 4 rows for 16.
-3. **Memorize.** A 60-second timer starts.
+3. **Memorize.** A timer starts: **30 seconds for 8 cards, 60 seconds for 16** (`memorizeMs(n)` in `liveRules.js`; SQL `memorize_seconds()` must match).
 4. **Flip.** At 0 seconds, every grid card flips face down. Only its letter shows.
 5. **Open cards.** Deal 3 cards face up from the rest of the deck. No card can appear twice across grid + open cards.
 6. **Place markers.** Player puts 2 markers on 2 different grid cards.
@@ -126,7 +126,7 @@ package.json                  "type": "module" + npm scripts; no dependencies
 - `bestPair(grid, open) -> { indices: [i, j], hand }` — tries every pair, returns the strongest. If several pairs tie, return the first one found (lowest indices).
 
 ### js/round.js
-- One round on screen: optional "starting in" countdown -> memorize (60s) -> flip -> place -> locked in / timed out.
+- One round on screen: optional "starting in" countdown -> memorize (`memorizeMs`: 30s for 8 cards, 60s for 16) -> flip -> place -> locked in / timed out.
 - Takes a `now()` clock: `Date.now` for solo, server time (`Date.now() + offset`) for live.
 - Everything is worked out from `now()` every 200 ms, never by counting ticks, so a lagging or sleeping tab catches up. A player who joins or refreshes mid-round lands in the right phase.
 - `placeMs`: lock-in time limit after the flip (live: 30s). `null` = no limit (solo).
@@ -142,7 +142,7 @@ package.json                  "type": "module" + npm scripts; no dependencies
 - Any player calls `finish_round` when everyone has locked in, or just after the deadline. The server decides.
 
 ### js/liveRules.js
-- Pure. Timeline (`START_DELAY_MS` 5s, `MEMORIZE_MS` 60s, `PLACE_MS` 30s), room codes (5 letters, no I/O), clock offset (fastest of 3 samples), `rankRound` and `ROUND_POINTS` 3/2/1.
+- Pure. Timeline (`START_DELAY_MS` 5s, `memorizeMs(n)` 30s for 8 / 60s for 16, `PLACE_MS` 30s; `roundTimeline(startAt, n)`), room codes (5 letters, no I/O), clock offset (fastest of 3 samples), `rankRound` and `ROUND_POINTS` 3/2/1.
 - `rankRound` must match the ordering in `finish_round` in `supabase/schema.sql`: hand category desc, tiebreak desc, lock-in time asc, name, id.
 
 ### Backends (`supabaseBackend.js`, `localBackend.js`)
@@ -156,7 +156,7 @@ package.json                  "type": "module" + npm scripts; no dependencies
 
 ## Live rooms
 
-- **Flow:** host creates a room (`?room=ABCDE` link + code) -> friends join with a name -> lobby shows who's online -> host Start (min 2) -> everyone gets the same deal and timer -> 60s memorize -> flip -> 30s to lock in -> results when everyone has locked in or time runs out -> host Next round. Points 3 / 2 / 1 per round; not locked in = no hand, ranked last.
+- **Flow:** host creates a room (`?room=ABCDE` link + code) -> friends join with a name -> lobby shows who's online -> host Start (min 2) -> everyone gets the same deal and timer -> memorize (30s for 8 cards, 60s for 16) -> flip -> 30s to lock in -> results when everyone has locked in or time runs out -> host Next round. Points 3 / 2 / 1 per round; not locked in = no hand, ranked last.
 - **Identity:** Supabase anonymous sign-in, kept in localStorage, so a refreshed tab is the same player and skips the name screen. Local test mode uses sessionStorage (one tab = one player).
 - **Timing:** `rooms.start_at` is set by the server (`start_round`). Clients convert with a clock offset from `server_now()`.
 - **Security:** see `supabase/schema.sql`. RLS + column grants: read all; write only your own player row (name, result columns); points and rooms change only through the `start_round` / `finish_round` functions. The publishable key is safe in `config.js`; never the secret key.
@@ -173,7 +173,7 @@ package.json                  "type": "module" + npm scripts; no dependencies
 - Tie-breaks: higher pair wins; same pair compares kickers; equal hands return 0.
 - `bestPair` returns the true best on a few hand-built grids.
 
-Run all tests after any change to `rng.js`, `deck.js`, `handEvaluator.js` or `liveRules.js`. After changing `supabase/schema.sql`, keep `localBackend.js` and `rankRound` in step.
+Run all tests after any change to `rng.js`, `deck.js`, `handEvaluator.js` or `liveRules.js`. After changing `supabase/schema.sql`, keep `localBackend.js` and `rankRound` in step. Timing changes need all three: `memorizeMs` / `PLACE_MS` in `liveRules.js`, `memorize_seconds` / `round_deadline` in `schema.sql` (then re-run it in Supabase), and the text in `index.html`.
 
 ## Known limits
 

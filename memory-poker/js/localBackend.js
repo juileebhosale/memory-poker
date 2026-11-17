@@ -6,7 +6,7 @@
 // (id kept in sessionStorage, so a refreshed tab is still the same player).
 // Changes are announced to other tabs with BroadcastChannel.
 // navigator.locks makes each change atomic across tabs.
-import { MEMORIZE_MS, PLACE_MS, START_DELAY_MS, MIN_PLAYERS, ROUND_POINTS, rankRound } from './liveRules.js';
+import { roundTimeline, START_DELAY_MS, MIN_PLAYERS, ROUND_POINTS, rankRound } from './liveRules.js';
 
 const DB_KEY = 'memory-poker-local-db';
 const USER_KEY = 'memory-poker-local-user';
@@ -139,7 +139,7 @@ export async function createLocalBackend() {
         if (!p || p.userId !== userId) fail('Not your player');
         const r = db.rooms[p.roomId];
         if (r.status !== 'playing' || res.round !== r.round) fail('No round is running');
-        if (Date.now() > r.startAt + MEMORIZE_MS + PLACE_MS + GRACE_MS) fail('Too late to lock in');
+        if (Date.now() > roundTimeline(r.startAt, r.n).deadline + GRACE_MS) fail('Too late to lock in');
         if (res.round < p.joinedRound) fail('You join from the next round');
         Object.assign(p, {
           round: res.round, markerA: res.markerA, markerB: res.markerB,
@@ -159,7 +159,7 @@ export async function createLocalBackend() {
         if (r.status !== 'playing') return r.status;
         const inRound = players.filter((p) => p.joinedRound <= r.round);
         const allIn = inRound.length > 0 && inRound.every((p) => p.round === r.round && p.handCategory != null);
-        if (!allIn && Date.now() < r.startAt + MEMORIZE_MS + PLACE_MS + GRACE_MS) return 'waiting';
+        if (!allIn && Date.now() < roundTimeline(r.startAt, r.n).deadline + GRACE_MS) return 'waiting';
         for (const row of rankRound(players, r.round)) {
           if (row.rank !== null && row.rank <= ROUND_POINTS.length) db.players[row.player.id].points += row.roundPoints;
         }

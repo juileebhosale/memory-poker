@@ -6,7 +6,7 @@ import { evaluate, bestPair, CATEGORY_NAMES } from './handEvaluator.js';
 import * as ui from './ui.js';
 import { startRound as startRoundUi, stopRound, lettersFor } from './round.js';
 import {
-  PLACE_MS, MIN_PLAYERS, roundTimeline, clockOffset, roomCodeFromBytes,
+  PLACE_MS, MIN_PLAYERS, memorizeMs, roundTimeline, clockOffset, roomCodeFromBytes,
   rankRound, playersInRound, allLockedIn, hasResult,
 } from './liveRules.js';
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
@@ -323,7 +323,7 @@ function renderLobby(error = '') {
     })),
     isHost: host,
     canStart,
-    note: `Send the link or the code to your friends. ${room.n} cards, 60 seconds to memorize, 30 seconds to lock in.`,
+    note: `Send the link or the code to your friends. ${room.n} cards, ${memorizeMs(room.n) / 1000} seconds to memorize, 30 seconds to lock in.`,
     wait,
   });
 }
@@ -345,6 +345,7 @@ function renderPlaying() {
       grid: S.deal.grid,
       open: S.deal.open,
       startAt: room.startAt,
+      memorizeMs: memorizeMs(room.n),
       now: serverNow,
       placeMs: PLACE_MS,
       alreadyLocked: S.locked ? { markers: [me.markerA, me.markerB] } : null,
@@ -352,7 +353,7 @@ function renderPlaying() {
       onTimeout,
     });
     // After the deadline, ask the server to finish the round (repeat until it does).
-    const { deadline } = roundTimeline(room.startAt);
+    const { deadline } = roundTimeline(room.startAt, room.n);
     later(function tryFinish() {
       callFinish();
       if (S.view === 'play') later(tryFinish, FINISH_RETRY_MS);

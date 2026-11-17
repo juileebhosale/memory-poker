@@ -93,6 +93,24 @@ create policy "players: leave (delete your own row)" on public.players
   for delete to authenticated using (user_id = (select auth.uid()));
 
 -- ---------------------------------------------------------------------------
+-- Timing (keep in step with memorizeMs() in memory-poker/js/liveRules.js)
+-- ---------------------------------------------------------------------------
+
+-- Seconds to memorize: 30 for 8 cards, 60 for 16.
+create or replace function public.memorize_seconds(p_n smallint)
+returns int
+language sql
+immutable
+as $$ select case p_n when 8 then 30 else 60 end $$;
+
+-- Last moment a result is accepted: start + memorize + 30s to lock in + 2s for slow networks.
+create or replace function public.round_deadline(p_start timestamptz, p_n smallint)
+returns timestamptz
+language sql
+immutable
+as $$ select p_start + make_interval(secs => public.memorize_seconds(p_n) + 30 + 2) $$;
+
+-- ---------------------------------------------------------------------------
 -- Triggers
 -- ---------------------------------------------------------------------------
 
@@ -119,7 +137,7 @@ create trigger players_set_joined_round
   for each row execute function public.set_joined_round();
 
 -- A result can only be written for the current round, while it's running,
--- and before the lock-in deadline (start + 60s memorize + 30s place, plus 2s for slow networks).
+-- and before the lock-in deadline (see round_deadline: memorize + 30s place + 2s grace).
 create or replace function public.check_result_timing()
 returns trigger
 language plpgsql
@@ -136,7 +154,7 @@ begin
     if r.status <> 'playing' or new.round is distinct from r.round then
       raise exception 'No round is running';
     end if;
-    if clock_timestamp() > r.start_at + interval '92 seconds' then
+    if clock_timestamp() > public.round_deadline(r.start_at, r.n) then
       raise exception 'Too late to lock in';
     end if;
     if new.round < new.joined_round then
@@ -239,7 +257,7 @@ begin
     from public.players p
    where p.room_id = p_room and p.joined_round <= r.round;
 
-  if not v_all_in and clock_timestamp() < r.start_at + interval '92 seconds' then
+  if not v_all_in and clock_timestamp() < public.round_deadline(r.start_at, r.n) then
     return 'waiting';
   end if;
 

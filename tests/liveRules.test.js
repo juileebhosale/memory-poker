@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  roundTimeline, phaseAt, MEMORIZE_MS, PLACE_MS,
+  roundTimeline, phaseAt, memorizeMs, PLACE_MS,
   roomCodeFromBytes, normalizeRoomCode, ROOM_ALPHABET,
   clockOffset, playersInRound, allLockedIn, rankRound, standings,
 } from '../memory-poker/js/liveRules.js';
@@ -10,20 +10,31 @@ import { hand } from './helpers.js';
 
 // ---------- Timeline ----------
 
-test('roundTimeline: flip after 60s, deadline 30s after the flip', () => {
-  const t = roundTimeline(1_000_000);
-  assert.equal(t.flipAt, 1_000_000 + MEMORIZE_MS);
-  assert.equal(t.deadline, 1_000_000 + MEMORIZE_MS + PLACE_MS);
+test('memorize time: 30s for 8 cards, 60s for 16', () => {
+  assert.equal(memorizeMs(8), 30_000);
+  assert.equal(memorizeMs(16), 60_000);
 });
 
-test('phaseAt walks countdown -> memorize -> place -> over', () => {
+test('roundTimeline: flip after the memorize time, deadline 30s after the flip', () => {
+  const t8 = roundTimeline(1_000_000, 8);
+  assert.equal(t8.flipAt, 1_000_000 + 30_000);
+  assert.equal(t8.deadline, 1_000_000 + 30_000 + PLACE_MS);
+  const t16 = roundTimeline(1_000_000, 16);
+  assert.equal(t16.flipAt, 1_000_000 + 60_000);
+  assert.equal(t16.deadline, 1_000_000 + 60_000 + PLACE_MS);
+});
+
+test('phaseAt walks countdown -> memorize -> place -> over (8 and 16 cards)', () => {
   const s = 50_000;
-  assert.equal(phaseAt(s, s - 1), 'countdown');
-  assert.equal(phaseAt(s, s), 'memorize');
-  assert.equal(phaseAt(s, s + MEMORIZE_MS - 1), 'memorize');
-  assert.equal(phaseAt(s, s + MEMORIZE_MS), 'place');
-  assert.equal(phaseAt(s, s + MEMORIZE_MS + PLACE_MS - 1), 'place');
-  assert.equal(phaseAt(s, s + MEMORIZE_MS + PLACE_MS), 'over');
+  for (const n of [8, 16]) {
+    const m = memorizeMs(n);
+    assert.equal(phaseAt(s, s - 1, n), 'countdown');
+    assert.equal(phaseAt(s, s, n), 'memorize');
+    assert.equal(phaseAt(s, s + m - 1, n), 'memorize');
+    assert.equal(phaseAt(s, s + m, n), 'place');
+    assert.equal(phaseAt(s, s + m + PLACE_MS - 1, n), 'place');
+    assert.equal(phaseAt(s, s + m + PLACE_MS, n), 'over');
+  }
 });
 
 // ---------- Room codes ----------

@@ -6,7 +6,6 @@
 //   live: Date.now() + server offset, so every device flips at the same moment.
 import * as ui from './ui.js';
 
-export const MEMORIZE_MS = 60_000;
 export const URGENT_SECONDS = 10;
 const LETTERS = 'ABCDEFGHIJKLMNOP'.split('');
 const LATE_JOIN_MS = 1_500; // joined/refreshed this long after the flip: skip the animations
@@ -42,6 +41,7 @@ class Round {
   // opts:
   //   grid, open      cards from deal()
   //   startAt         when memorizing starts (clock of now()); before it, a "starting in" countdown shows
+  //   memorizeMs      how long the cards stay face up (memorizeMs(n) from liveRules: 30s for 8, 60s for 16)
   //   now             clock function
   //   placeMs         time limit to lock in after the flip, or null for no limit (solo)
   //   alreadyLocked   { markers } if this player already locked in (e.g. page refreshed)
@@ -54,7 +54,7 @@ class Round {
     this.letters = lettersFor(this.n);
     this.now = opts.now ?? Date.now;
     this.startAt = opts.startAt;
-    this.flipAt = opts.startAt + MEMORIZE_MS;
+    this.flipAt = opts.startAt + opts.memorizeMs;
     this.deadline = opts.placeMs == null ? null : this.flipAt + opts.placeMs;
     this.onLocked = opts.onLocked ?? (() => {});
     this.onTimeout = opts.onTimeout ?? (() => {});

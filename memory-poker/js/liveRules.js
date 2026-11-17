@@ -6,8 +6,14 @@ import { compare } from './handEvaluator.js';
 // ---------- Timeline ----------
 // Every time below is in SERVER milliseconds (see clock offset).
 export const START_DELAY_MS = 5_000;   // host clicks Start -> round starts 5s later
-export const MEMORIZE_MS = 60_000;     // cards face up
-export const PLACE_MS = 30_000;        // time to lock in, counted from the flip
+export const PLACE_MS = 30_000;        // live only: time to lock in, counted from the flip
+
+// Time to memorize depends on the grid size. Used by solo and live.
+// Keep in step with public.memorize_seconds() in supabase/schema.sql.
+export const MEMORIZE_MS_BY_N = Object.freeze({ 8: 30_000, 16: 60_000 });
+export function memorizeMs(n) {
+  return MEMORIZE_MS_BY_N[n] ?? 60_000;
+}
 export const MIN_PLAYERS = 2;
 
 // Phase of a round at server time `now`.
@@ -15,13 +21,13 @@ export const MIN_PLAYERS = 2;
 //   memorize:  startAt .. flipAt
 //   place:     flipAt .. deadline
 //   over:      after the deadline
-export function roundTimeline(startAtMs) {
-  const flipAt = startAtMs + MEMORIZE_MS;
+export function roundTimeline(startAtMs, n) {
+  const flipAt = startAtMs + memorizeMs(n);
   return { startAt: startAtMs, flipAt, deadline: flipAt + PLACE_MS };
 }
 
-export function phaseAt(startAtMs, nowMs) {
-  const t = roundTimeline(startAtMs);
+export function phaseAt(startAtMs, nowMs, n) {
+  const t = roundTimeline(startAtMs, n);
   if (nowMs < t.startAt) return 'countdown';
   if (nowMs < t.flipAt) return 'memorize';
   if (nowMs < t.deadline) return 'place';

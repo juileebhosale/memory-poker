@@ -7,7 +7,7 @@ A browser game. Memorize a grid of cards, watch them flip face down, then pick 2
 ## How to play
 
 1. Choose 8 or 16 cards and press **Start**.
-2. You have **60 seconds** to memorize the cards. Each card has a letter (A–H or A–P).
+2. You have **30 seconds** (8 cards) or **60 seconds** (16 cards) to memorize the cards. Each card has a letter (A–H or A–P).
 3. The cards flip face down. Only the letters show.
 4. **3 open cards** appear face up.
 5. Pick **2 face-down cards** (click them, or type their letters). Your hand = those 2 + the 3 open cards. Press **Lock in** (or Enter).
@@ -19,7 +19,7 @@ A browser game. Memorize a grid of cards, watch them flip face down, then pick 2
 
 1. **Play with friends** → pick 8 or 16 → your name → **Create room**.
 2. Send the link (or the 5-letter code) to your friends. They enter their names and appear in the lobby.
-3. Press **Start**. Everyone gets the same cards and the same timer: 60 seconds to memorize, 30 seconds to lock in.
+3. Press **Start**. Everyone gets the same cards and the same timer: 30 seconds to memorize (60 with 16 cards), then 30 seconds to lock in.
 4. Results appear when everyone has locked in (or time runs out): best hand first, then fastest. 3 / 2 / 1 points per round.
 5. The host presses **Next round** for new cards. Points add up.
 

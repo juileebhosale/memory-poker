@@ -34,7 +34,7 @@ What it creates:
 | Column permissions + Row Level Security | Anyone signed in can read rooms and players. You can only add, change or delete **your own** player row, and only these columns: name, markers, hand, lock-in time. Nobody can change points or rooms directly. |
 | `server_now()` | Returns the server's clock. Each browser asks 3 times and keeps the fastest answer, then uses the difference for all timers, so a phone with a wrong clock still flips at the same moment. |
 | `start_round(room, seed)` | Host only. Needs at least 2 players. Sets the new seed, adds 1 to the round and sets `start_at` = server time + 5 seconds. |
-| `finish_round(room)` | Any player may call it. It acts once per round: when everyone in the round has locked in, or 92 seconds after `start_at` (60s memorize + 30s to lock in + 2s grace). Gives 3 / 2 / 1 points to the top three hands, then sets status to `reveal`. |
+| `finish_round(room)` | Any player may call it. It acts once per round: when everyone in the round has locked in, or at the deadline: `start_at` + memorize (30s for 8 cards, 60s for 16) + 30s to lock in + 2s grace (`round_deadline()`). Gives 3 / 2 / 1 points to the top three hands, then sets status to `reveal`. |
 | Triggers | New players joining mid-round sit out until the next round. A result can only be written for the current round, before the deadline. |
 | Realtime publication | Sends `rooms` and `players` changes to browsers subscribed to that room. |
 | Cleanup job (pg_cron, free) | Every hour at :17, deletes rooms older than 24 hours (players go with them). |
