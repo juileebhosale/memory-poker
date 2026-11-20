@@ -1,6 +1,7 @@
 // All DOM reading and writing lives here. game.js, round.js and live.js call these functions.
 // Player names come from other people: always set them with textContent, never innerHTML.
 import { cardLabel } from './deck.js';
+import { initRankingsPanel, isRankingsTarget } from './rankingsPanel.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -35,6 +36,7 @@ const SCREENS = ['home', 'setup', 'live-setup', 'lobby', 'play'];
 //   onLiveSubmit({ n, name }), onCopyLink(), onStartRound(), onNextRound(), onLeave(),
 // }
 export function init(handlers) {
+  initRankingsPanel();
   els = {
     screens: Object.fromEntries(SCREENS.map((s) => [s, $(`screen-${s}`)])),
     homeLink: $('home-link'),
@@ -130,6 +132,7 @@ export function init(handlers) {
     const t = e.target;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
     if (e.key === 'Enter') {
+      if (isRankingsTarget(t)) return; // Enter on the panel's buttons opens/closes the panel
       if (handlers.onEnterKey()) e.preventDefault();
       return;
     }

@@ -39,6 +39,10 @@
     <header class="app-header">
       <h1>Memory Poker</h1>
       <a id="home-link" class="home-link" href="/memory-poker/" hidden>← Home</a>
+      <button id="rankings-open" type="button" class="rankings-open" aria-label="Poker hand rankings"
+              aria-controls="rankings-panel" aria-expanded="false">
+        <span aria-hidden="true">♠︎ <span class="rankings-long">Rankings</span><span class="rankings-short">Hands</span></span>
+      </button>
       <p id="mode-banner" class="mode-banner" hidden></p>
       <p id="from-banner" class="from-banner" hidden></p>
     </header>
@@ -219,6 +223,17 @@
       </p>
     </footer>
   </main>
+
+  <!-- Poker hand rankings. Rows are filled in by js/rankingsPanel.js from js/handRankings.js. -->
+  <aside id="rankings-panel" class="rankings-panel" aria-labelledby="rankings-title" hidden>
+    <div class="rankings-head">
+      <h2 id="rankings-title">Poker hand rankings</h2>
+      <button type="button" class="rankings-close" aria-label="Close hand rankings">✕</button>
+    </div>
+    <p class="rankings-intro">Best hand at the top. Faded cards don't count toward the hand.</p>
+    <ol class="rank-list"></ol>
+    <ul class="rank-notes"></ul>
+  </aside>
 
   <script type="module" src="/memory-poker/js/game.js"></script>
 </body>
