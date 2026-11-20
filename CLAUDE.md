@@ -160,7 +160,7 @@ package.json                  "type": "module" + npm scripts; no dependencies
 - Must work on a 375px-wide phone screen and on a laptop.
 
 ### Rankings panel (`handRankings.js` + `rankingsPanel.js`)
-- Header button "♠ Rankings" ("Hands" under 340px) opens a side panel from the right: hands best to worst, a one-line description, and 5 example cards with the cards that don't count faded. Royal flush is shown as its own row (the game itself calls it a straight flush).
+- Header button "♠ Rankings" ("Hands" under 340px), shown only on the play screen (solo and live games; not home, setup or lobby), opens a side panel from the right: hands best to worst, a one-line description, and 5 example cards with the cards that don't count faded. Royal flush is shown as its own row (the game itself calls it a straight flush).
 - Non-modal: the game keeps running and letter keys still pick cards while it's open. Enter on the panel's buttons is left to the buttons (never locks in). Esc or ✕ closes it.
 - `tests/handRankings.test.js` checks every example against `handEvaluator.js`.
 

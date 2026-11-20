@@ -1,7 +1,7 @@
 // All DOM reading and writing lives here. game.js, round.js and live.js call these functions.
 // Player names come from other people: always set them with textContent, never innerHTML.
 import { cardLabel } from './deck.js';
-import { initRankingsPanel, isRankingsTarget } from './rankingsPanel.js';
+import { initRankingsPanel, isRankingsTarget, setRankingsAvailable } from './rankingsPanel.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -148,6 +148,7 @@ export function init(handlers) {
 function showScreen(name) {
   for (const [key, el] of Object.entries(els.screens)) el.hidden = key !== name;
   els.homeLink.hidden = name === 'home';
+  setRankingsAvailable(name === 'play'); // only during a game, solo or live
 }
 
 export function showHome({ error = '' } = {}) {

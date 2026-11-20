@@ -76,6 +76,13 @@ export function closeRankings({ returnFocus = true } = {}) {
   if (returnFocus) openBtn.focus({ preventScroll: true });
 }
 
+// Show the Rankings button only on game screens. Hiding it also closes the panel.
+export function setRankingsAvailable(available) {
+  if (!openBtn) return;
+  openBtn.hidden = !available;
+  if (!available) closeRankings({ returnFocus: false });
+}
+
 // True if a key event came from the panel or its button, so game shortcuts (Enter = lock in)
 // don't fire while someone is using the panel with the keyboard.
 export function isRankingsTarget(target) {
